@@ -4,14 +4,14 @@ sudo: required
 dist: trusty
 language: python
 
-services:
+disabled_services:
     - docker
     - postgresql
 
-addons:
+disabled_addons:
     postgresql: 9.6
 
-matrix:
+disabled_matrix:
     include:
         - env:
             SCRIPT=./scripts/build_manylinux1_i686.sh
@@ -20,7 +20,15 @@ matrix:
         - env:
             SCRIPT=./scripts/build_sdist.sh
 
-before_script:
+matrix:
+    include:
+        - os:
+            osx
+          env:
+            SCRIPT=./scripts/build_osx.sh
+
+
+disabled_before_script:
     # Set up files required for upload
     - openssl aes-256-cbc
       -K $encrypted_bd656d6a5753_key -iv $encrypted_bd656d6a5753_iv
@@ -39,7 +47,7 @@ before_script:
 
 script: $SCRIPT
 
-after_success:
+disabled_after_success:
     - rsync -avr -e "ssh -i /tmp/id_rsa-initd-upload
         -o 'UserKnownHostsFile known_hosts' -o 'StrictHostKeyChecking yes'"
       psycopg2/dist/ "upload@initd.org:"
