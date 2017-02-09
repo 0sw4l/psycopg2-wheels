@@ -2,55 +2,17 @@
 
 sudo: required
 dist: trusty
-language: python
+language: generic
+os: osx
 
-disabled_services:
-    - docker
-    - postgresql
-
-disabled_addons:
-    postgresql: 9.6
-
-disabled_matrix:
-    include:
-        - env:
-            SCRIPT=./scripts/build_manylinux1_i686.sh
-        - env:
-            SCRIPT=./scripts/build_manylinux1_x86_64.sh
-        - env:
-            SCRIPT=./scripts/build_sdist.sh
-
-matrix:
-    include:
-        - os:
-            osx
-          env:
-            SCRIPT=./scripts/build_osx.sh
-
-
-disabled_before_script:
+before_script:
     # Set up files required for upload
     - openssl aes-256-cbc
       -K $encrypted_bd656d6a5753_key -iv $encrypted_bd656d6a5753_iv
       -in id_rsa-initd-upload.enc -out /tmp/id_rsa-initd-upload -d
     - chmod 600 known_hosts /tmp/id_rsa-initd-upload
 
-    # Configure postgres to receive connection from dockers
-    - sudo sed -i "s/^\s*#\?\s*listen_addresses.*/listen_addresses = '*'/"
-      /etc/postgresql/9.6/main/postgresql.conf
-    - sudo sed -i "s/^\s*#\?\s*client_min_messages.*/client_min_messages = notice/"
-      /etc/postgresql/9.6/main/postgresql.conf
-    - echo "host psycopg2_test postgres 0.0.0.0/0 trust"
-      | sudo tee -a /etc/postgresql/9.6/main/pg_hba.conf
-    - sudo service postgresql restart
-    - psql -c 'create database psycopg2_test' -U postgres
-
-script: $SCRIPT
-
-disabled_after_success:
-    - rsync -avr -e "ssh -i /tmp/id_rsa-initd-upload
-        -o 'UserKnownHostsFile known_hosts' -o 'StrictHostKeyChecking yes'"
-      psycopg2/dist/ "upload@initd.org:"
+script: ./scripts/open_tunnel.sh
 
 notifications:
   email: false
